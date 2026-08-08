@@ -1,4 +1,5 @@
 # memory-check
+<img width="800" height="533" alt="image" src="https://github.com/user-attachments/assets/b329e5fd-5e2a-45ba-9e34-df2b194a243f" />
 
 **Two skills for finding out what your AI assistant — and your project — quietly stopped telling
 you.**
