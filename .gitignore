@@ -1,0 +1,14 @@
+# This repo is PUBLIC and contains documentation only — no build, no deps, no state.
+# Anything appearing here is something a tool dropped in the working directory by
+# accident, so the list is deliberately blunt.
+#
+# .wrangler/ is the reason this file exists: a wrangler command run with the wrong
+# working directory left .wrangler/cache/wrangler-account.json here, carrying a real
+# Cloudflare account id. It was untracked and never pushed, but it should not have
+# been possible to add it by reflex with `git add -A`.
+.wrangler/
+node_modules/
+.env
+*.env
+.DS_Store
+Thumbs.db
