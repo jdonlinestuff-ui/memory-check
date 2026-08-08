@@ -1,6 +1,38 @@
 # memory-check
 
-**A skill that audits your AI assistant's memory before you act on it again.**
+**Two skills for finding out what your AI assistant — and your project — quietly stopped telling
+you.**
+
+| skill | asks |
+|---|---|
+| [`memory-check`](memory-check/SKILL.md) | What does my assistant believe that is no longer true, and what rules does it think I gave it? |
+| [`deep-analysis`](deep-analysis/SKILL.md) | What did I leave open on this project, and how far through dealing with it am I? |
+
+They share one pattern: produce a numbered report, **change nothing**, take rulings as typed
+text, then apply. Use either on its own.
+
+---
+
+## Install
+
+**Claude Code, or anything that reads `SKILL.md` folders:**
+
+```bash
+git clone https://github.com/jdonlinestuff-ui/memory-check.git
+cp -r memory-check/memory-check memory-check/deep-analysis ~/.claude/skills/
+```
+
+Then say `memory check` or `deep analysis`.
+
+**Any other assistant:** paste [`prompt.md`](prompt.md) or
+[`prompt-deep-analysis.md`](prompt-deep-analysis.md). Neither needs anything installed — just an
+assistant with access to the thing it is checking.
+
+---
+
+## memory-check
+
+**Audits your AI assistant's memory before you act on it again.**
 
 If your assistant keeps memory between sessions, some of it is already wrong. Not because
 anyone made a mistake — because it was **true when it was written** and something changed
@@ -13,23 +45,7 @@ of it will be phrased more strongly than you meant, or more weakly.
 
 This asks for both, in one pass, and stops before changing anything.
 
----
-
-## Install
-
-**Claude Code, or anything that reads `SKILL.md` folders:**
-
-```bash
-git clone https://github.com/jdonlinestuff-ui/memory-check.git
-cp -r memory-check/memory-check ~/.claude/skills/
-```
-
-Then say `memory check`.
-
-**Any other assistant:** paste [`prompt.md`](prompt.md). It needs nothing but an assistant with
-memory and access to the system that memory describes.
-
-## What you get
+### What you get
 
 One report in two sections — stale facts, and standing rules — written to a self-contained HTML
 file you can open offline. Every row is numbered. You rule on each by typing:
@@ -45,7 +61,7 @@ when you choose to do nothing.
 
 ---
 
-## Why each part is there
+### Why each part is there
 
 **"Test against what is true now, not against another memory file."** Memory agrees with itself
 by construction — one file copies another. Only the system outside it can disagree.
@@ -77,7 +93,7 @@ result. Make it say what it checked.
 **"Do not soften a rule while rewording it."** Left unsaid, a rule gets a little more
 comfortable on each pass until it is not your rule any more.
 
-## What to expect
+### What to expect
 
 On a first run over a few dozen memory files, expect a handful of conflicts and for **most of
 them to be inventories** — counts, versions, commit ids, endpoint lists. The fix is usually not
@@ -89,13 +105,79 @@ in a way you would not have chosen. That one is the point of Section 2.
 
 ---
 
-## Want it as a button instead of a chat?
+## deep-analysis
 
-This repo deliberately ships the basic version: a prompt, a report, and rulings typed as text.
-That works on every platform and needs nothing installed.
+**A dated review of a project that stays countable until you have dealt with every finding.**
 
-If you would rather click than type, hand your assistant the block below. It describes the
-review UI, not the check — the check above stays exactly as it is.
+Built for people who move between ideas faster than they finish them. Most review output is read
+once and lost; this produces the opposite — a report that never changes, and findings that keep
+their own state so the tool can open with:
+
+> *This is your 3rd analysis of this project. **6 findings are still open** from the previous two.*
+
+That sentence is the entire feature. Everything in the skill exists to make it true.
+
+### The one design decision worth understanding
+
+**A report and its findings have different lifecycles.** A report is an artefact as at a date and
+never changes. A finding is a live record: pending, accepted, dismissed, or raised as work.
+
+Conflating them is the mistake. If re-running overwrote the last report, `3/8 reviewed` would be
+meaningless — reviewed against what? So every run mints a new report, every old one stays
+readable, and findings outlive the report that carried them. It needs two files:
+
+```
+.analysis/reports/2026-08-08-1.md    write once, never edited
+.analysis/findings.json              live state, one record per finding
+```
+
+### Scope
+
+You pick what it looks for, and the choice is **stored on the report** — because an absent
+finding means something different depending on whether the analysis was asked to look for it.
+
+`open` · `abandoned` · `stale` · `blocked` · `sequence` · `cost` · `risk`
+
+**`abandoned` is the one that serves the point** — things started and silently dropped, the ones
+nobody is tracking because nobody remembers them.
+
+### Why it is built to resist itself
+
+Anything that generates reports on demand creates pressure toward the templated version:
+findings that are safe, plentiful, and worth nothing. What makes an analysis worth reading is
+that its headline is uncomfortable, and no mechanism preserves that by itself. Three choices push
+against it, and none is optional:
+
+1. **Nothing counts reports generated.** Only findings, and only their review state. No number
+   anywhere rewards producing more analyses.
+2. **A dismissed finding costs nothing.** Dismissal is a first-class outcome, not a failure — a
+   reviewer who cannot dismiss freely stops reviewing, and then the counter means nothing.
+3. **A report where everything was dismissed stays visible.** That is the signal an analysis was
+   noise, and it should be legible without going looking for it.
+
+An empty report is allowed. Three real findings beat eight padded ones.
+
+### Two smaller rules that are easy to get wrong
+
+**Never store "this report is reviewed".** Derive it — a stored flag can say done while three of
+its own findings sit pending, and there is no honest way to reconcile that afterwards.
+
+**Never recompute the denominator.** It has to describe the report as issued, or every historical
+`3/8` silently becomes something else the next time you change how blocks are counted.
+
+---
+
+## Want a UI instead of a chat?
+
+**Both skills deliberately ship as the basic version** — a prompt, a report, and rulings typed as
+text. That works on every platform and needs nothing installed, which is the point.
+
+If you would rather click than type, hand your assistant one of the blocks below. They describe
+the review surface, **not** the check — the checks above stay exactly as they are. Each one names
+the failure modes that bit the original, because those are the parts you would otherwise discover
+the expensive way.
+
+### For memory-check
 
 ```
 Take my memory-check skill and give it a review UI.
@@ -128,6 +210,50 @@ Four things that will bite you if you skip them:
    chat.
 
 Show me the write target first and let me confirm it before you build the rest.
+```
+
+### For deep-analysis
+
+```
+Take my deep-analysis skill and give it a UI.
+
+Keep the analysis itself untouched. What I want changed is how I request one and how I
+rule on the findings.
+
+THE REQUEST SIDE. A [Deep Analysis] button that opens a popup. Before anything else the
+popup says, in plain words: "Your 3rd analysis of this project. 6 findings still open
+from the previous two." Then a multi-select of the scope options with at least one
+required, and a free-text box for what is on my mind right now. Store both on the
+report.
+
+THE REVIEW SIDE. A list of reports newest first, each showing its own outcome
+breakdown, and a counter reading "reports 1/3 · findings 4/17". Opening a report shows
+its finding blocks, each with four buttons — PENDING · ACCEPT · DISMISS · RAISE AS WORK
+— and a free-text box for the ones where none of the four is what I mean.
+
+Five things that will bite you if you skip them:
+
+1. THE REPORT PAGE IS READ-ONLY AND STAYS THAT WAY. The UI renders it; the UI never
+   writes to it. Make immutability a property of the system, not a promise about
+   behaviour — if the code cannot edit an old report, it cannot silently rewrite
+   history and make every counter a lie.
+2. NEVER STORE "this report is reviewed". Derive it from its findings every time. A
+   stored flag will eventually say done while three of its own findings sit pending,
+   and there is no honest way to reconcile that afterwards.
+3. RAISE AS WORK MUST BE AN EXPLICIT COPY into wherever I actually track work, never an
+   implicit one. That moment is a machine finding becoming work I have accepted, and it
+   should cost a deliberate click. If you cannot write to my task list yet, ship the
+   button DISABLED WITH THE REASON ON IT rather than leaving it out — and put the
+   outcome and the reference in the data model from the start so no migration is needed
+   later.
+4. PIN THE HEADER AND THE SAVE BUTTON, cap the height, scroll the list inside it. A
+   seven-row review pushed the save button below the fold once and I chose every
+   answer, typed replies, and had nothing to press. The typed replies were lost.
+5. DO NOT ADD A COUNTER FOR REPORTS GENERATED. Count findings and their review state,
+   nothing else. Any number that rewards producing more analyses will get me more
+   analyses and worse ones.
+
+Show me where SAVE writes before you build the rest.
 ```
 
 ---
